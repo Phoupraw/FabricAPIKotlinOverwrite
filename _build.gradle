@@ -1,0 +1,124 @@
+plugins {
+    id 'fabric-loom' version '1.4-SNAPSHOT'
+    id 'maven-publish'
+    id "org.jetbrains.kotlin.jvm" version "1.9.22"
+//    id 'org.jetbrains.kotlin.jvm' version '1.9.22'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven {
+        name = "CottonMC"
+        url = "https://server.bbkr.space/artifactory/libs-release/"
+        content {
+            includeGroup("io.github.cottonmc")// LibGui
+        }
+    }
+    mavenCentral()
+}
+
+fabricApi {
+    configureDataGeneration()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0-RC"
+    // To change the versions see the gradle.properties file
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation("net.fabricmc:fabric-loader:${project.loader_version}")
+
+    // Fabric API. This is technically optional, but you probably want it anyway.
+    modCompileOnly("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
+//      .exclude(module: "fabric-transfer-api-v1")
+    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
+    modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
+//    compileOnlyApi(annotationProcessor("org.projectlombok:lombok:$lombok"))
+//    include(modApi("io.github.cottonmc:LibGui:${lib_gui}")) {
+//        exclude(module: "fabric-loader")
+//    }
+    // Uncomment the following line to enable the deprecated Fabric API modules.
+    // These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
+
+    // modImplementation "net.fabricmc.fabric-api:fabric-api-deprecated:${project.fabric_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+//    inputs.property "id", mod_id
+
+    filesMatching("fabric.mod.json") {
+        expand (
+            version: project.version,
+//            id: mod_id
+        )
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 17
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = 17
+        freeCompilerArgs = ["-Xjvm-default=all", "-Xjdk-release=17", "-Xextended-compiler-checks"]
+    }
+}
+
+java {
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
+    withSourcesJar()
+//    excludes = ["phoupraw.mcmod.linked.mixin.MFluidStorage"]
+}
+sourceSets {
+    main{
+        java {
+            exclude("phoupraw/mcmod/linked/**")
+//            excludes = ["phoupraw.mcmod.linked.mixin.MFluidStorage"]
+        }
+    }
+}
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+//    exclude("net/fabricmc/*")
+}
+
+// configure the maven publication
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        mavenLocal()
+        // Add repositories to publish to here.
+        // Notice: This block does NOT have the same function as the block in the top level.
+        // The repositories here will be used for publishing your artifact, not for
+        // retrieving dependencies.
+    }
+}
+kotlin {
+    jvmToolchain(17)
+}
+//loom {
+//    accessWidenerPath.set(file("src/main/resources/${mod_id}.accessWidener"))
+//}
+//loom {
+//    mixin {
+//        useLegacyMixinAp = false
+//    }
+//}
